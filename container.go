@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"syscall"
 
 	"github.com/docker/docker/pkg/reexec"
 )
@@ -26,13 +27,18 @@ func init() {
 func container() {
 	fmt.Printf("Hello, I am container with pid %d\n", os.Getpid())
 
-	cmd := exec.Command("/bin/echo", "I am exec")
+	// Do not participate in shared subtrees by recursively setting mounts under / to private.
+	if err := syscall.Mount("none", "/", "", syscall.MS_REC|syscall.MS_PRIVATE, ""); err != nil {
+		panic(fmt.Sprintf("Error recursively settings mounts to private: %s\n", err))
+	}
+
+	cmd := exec.Command("/bin/bash")
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
-		panic(fmt.Sprintf("Error running /bin/echo command: %s\n", err))
+		panic(fmt.Sprintf("Error running /bin/bash command: %s\n", err))
 	}
 }
 
@@ -43,6 +49,10 @@ func main() {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Cloneflags: syscall.CLONE_NEWNS,
+	}
 
 	if err := cmd.Run(); err != nil {
 		panic(fmt.Sprintf("Error running reexec container command: %s\n", err))
