@@ -71,6 +71,31 @@ func createContainerFilesystem(imageDir string, imageName string, containerDir s
 
 	// Change the container's root file system.
 	pivotRoot(containerRoot)
+
+	// Mount special file systems per Open Containers spec.
+	// https://github.com/opencontainers/runtime-spec/blob/master/config-linux.md
+	mountSpecialFilesystems()
+}
+
+func mountSpecialFilesystems() {
+	mustMount("proc", "/proc", "proc", syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_NOEXEC, "")
+	mustMount("sysfs", "/sys", "sysfs", syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_NOEXEC, "")
+
+	// With devtmpfs, kernel will automatically create device nodes.
+	mustMount("devtmpfs", "/dev", "devtmpfs", syscall.MS_NOSUID, "mode=0755")
+
+	mustMount("devpts", "/dev/pts", "devpts", syscall.MS_NOSUID|syscall.MS_NOEXEC, "")
+	mustMount("tmpfs", "/dev/shm", "tmpfs", syscall.MS_NOSUID|syscall.MS_NODEV, "")
+}
+
+func mustMount(source string, target string, fstype string, flags uintptr, data string) {
+	if err := os.MkdirAll(target, os.ModeDir); err != nil {
+		panic(fmt.Sprintf("Error creating mount dir (mkdir %s) in container: %s\n", target, err))
+	}
+
+	if err := syscall.Mount(source, target, fstype, flags, data); err != nil {
+		panic(fmt.Sprintf("Error mounting %s in container: %s\n", target, err))
+	}
 }
 
 func pivotRoot(containerRoot string) {
