@@ -42,7 +42,7 @@ func container() {
 
 	createContainerFilesystem("images", "alpine.tar.gz", "containers", containerId.String())
 
-	cmd := exec.Command("/bin/bash")
+	cmd := exec.Command("/bin/sh")
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -68,6 +68,38 @@ func createContainerFilesystem(imageDir string, imageName string, containerDir s
 	if err := imageArchiver.Open(imagePath, containerRoot); err != nil {
 		panic(fmt.Sprintf("Error extracting image %s: %s\n", imageName, err))
 	}
+
+	// Change the container's root file system.
+	pivotRoot(containerRoot)
+}
+
+func pivotRoot(containerRoot string) {
+	// bind mount containerRoot to itself to circumvent pivot_root requirement.
+	if err := syscall.Mount(containerRoot, containerRoot, "", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
+		panic(fmt.Sprintf("Error changing root file system (bind mount self): %s\n", err))
+	}
+
+	oldRoot := filepath.Join(containerRoot, "old_root")
+	if err := os.MkdirAll(oldRoot, 0700); err != nil {
+		panic(fmt.Sprintf("Error changing root file system (mkdir old_root): %s\n", err))
+	}
+	if err := syscall.PivotRoot(containerRoot, oldRoot); err != nil {
+		panic(fmt.Sprintf("Error changing root file system (pivot_root): %s\n", err))
+	}
+	if err := os.Chdir("/"); err != nil {
+		panic(fmt.Sprintf("Error changing root file system (chdir): %s\n", err))
+	}
+
+	// MNT_DETACH performs a lazy unmount while immediately disconnecting the
+	// file system recursively. Allows us to proceed at the cost of leaving
+	// the mount in an ambiguous state. See mount(2).
+	if err := syscall.Unmount("/old_root", syscall.MNT_DETACH); err != nil {
+		panic(fmt.Sprintf("Error changing root file system (unmount old_root): %s\n", err))
+	}
+	if err := os.RemoveAll("/old_root"); err != nil {
+		panic(fmt.Sprintf("Error changing root file system (rmdir old_root): %s\n", err))
+	}
+
 }
 
 func main() {

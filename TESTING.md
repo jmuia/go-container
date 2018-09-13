@@ -62,3 +62,21 @@ Hello, I am container with pid 20996
 root@ubuntu-xenial# ls containers/e01a04e8-6e30-4d5a-a99c-a722b02bad04/rootfs/
 bin  dev  etc  home  lib  media  mnt  proc  root  run  sbin  srv  sys  tmp  usr  var
 ```
+
+## Pivot Root
+We had to change our shell to `/bin/sh` because alpine doesn't have bash. We can see we have a new view of the file system now.
+
+Now there's nothing in some file systems like /proc and /sys, so we can't see our hosts mounts that way anymore.
+```
+vagrant@ubuntu-xenial:~/go/src/github.com/jmuia/go-container$ sudo ./go-container
+Hello, I am main with pid 21656
+Hello, I am container with pid 21661
+/ # ls
+bin    dev    etc    home   lib    media  mnt    proc   root   run    sbin   srv    sys    tmp    usr    var
+/ # mount
+mount: no /proc/mounts
+/ # pwd
+/
+/ # exit
+```
+
