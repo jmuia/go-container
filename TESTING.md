@@ -51,3 +51,14 @@ vagrant@ubuntu-xenial$ grep iamprivate /proc/mounts
 vagrant@ubuntu-xenial$
 ```
 
+## Images and Containers
+Run the container and check that there is a copy of the image. This will get better.
+
+```
+vagrant@ubuntu-xenial$ ls containers
+vagrant@ubuntu-xenial$ sudo ./go-container
+Hello, I am main with pid 20991
+Hello, I am container with pid 20996
+root@ubuntu-xenial# ls containers/e01a04e8-6e30-4d5a-a99c-a722b02bad04/rootfs/
+bin  dev  etc  home  lib  media  mnt  proc  root  run  sbin  srv  sys  tmp  usr  var
+```

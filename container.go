@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 
 	"github.com/docker/docker/pkg/reexec"
+	"github.com/mholt/archiver"
+	"github.com/satori/go.uuid"
 )
 
 func init() {
@@ -32,6 +35,13 @@ func container() {
 		panic(fmt.Sprintf("Error recursively settings mounts to private: %s\n", err))
 	}
 
+	containerId, err := uuid.NewV4()
+	if err != nil {
+		panic(fmt.Sprintf("Error generating container uuid: %s\n", err))
+	}
+
+	createContainerFilesystem("images", "alpine.tar.gz", "containers", containerId.String())
+
 	cmd := exec.Command("/bin/bash")
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -39,6 +49,24 @@ func container() {
 
 	if err := cmd.Run(); err != nil {
 		panic(fmt.Sprintf("Error running /bin/bash command: %s\n", err))
+	}
+}
+
+func createContainerFilesystem(imageDir string, imageName string, containerDir string, containerId string) {
+	imagePath := filepath.Join(imageDir, imageName)
+	containerRoot := filepath.Join(containerDir, containerId, "rootfs")
+
+	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
+		panic(fmt.Sprintf("Unable to locate image %s\n", imageName))
+	}
+
+	imageArchiver := archiver.MatchingFormat(imagePath)
+	if imageArchiver == nil {
+		panic(fmt.Sprintf("Unknown archive format for image %s\n", imageName))
+	}
+
+	if err := imageArchiver.Open(imagePath, containerRoot); err != nil {
+		panic(fmt.Sprintf("Error extracting image %s: %s\n", imageName, err))
 	}
 }
 
