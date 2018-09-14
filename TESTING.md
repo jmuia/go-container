@@ -152,3 +152,59 @@ ubuntu-xenial
 ```
 We can also compare the inode number in `/proc/self/ns/uts` for the container and the host.
 
+## PID namespace
+
+Before the namespace, we can see all the host processes:
+```
+vagrant@ubuntu-xenial$ make run
+go build
+sudo ./go-container
+Hello, I am main with pid 4301
+Hello, I am container with pid 4306
+root@42456060-cfcc-44e3-b81b-dcaf38a87865$ ps
+PID   USER     TIME  COMMAND
+    1 root      0:03 {systemd} /sbin/init
+    ...
+ 4205 1000      0:00 sshd: vagrant@pts/1
+ 4206 1000      0:00 -bash
+ 4223 root      0:00 [kworker/u4:1]
+ 4268 1000      0:00 top
+ 4269 1000      0:00 make run
+ 4300 root      0:00 sudo ./go-container
+ 4301 root      0:00 ./go-container
+ 4306 root      0:00 {exe} container
+ 4311 root      0:00 /bin/sh
+ 4312 root      0:00 ps
+ ```
+
+And we can kill them!
+```
+root@42456060-cfcc-44e3-b81b-dcaf38a87865$ ps | grep top
+ 4268 1000      0:00 top
+ 4314 root      0:00 grep top
+
+root@42456060-cfcc-44e3-b81b-dcaf38a87865$ kill -9 4268
+
+root@42456060-cfcc-44e3-b81b-dcaf38a87865$ ps | grep top
+ 4316 root      0:00 grep top
+```
+
+Once we enter the namespace, we can no longer see the host processes:
+```
+root@38f03563-6500-4ef5-b583-087851c9fdad$ ps
+PID   USER     TIME  COMMAND
+    1 root      0:00 {exe} container
+    6 root      0:00 /bin/sh
+    7 root      0:00 ps
+```
+
+Yikes, there's a bug. We really want to be using `syscall.Exec` rather Go's `exec.Command`.
+
+```
+root@d349ced3-db1d-4b21-911f-d6d141534b4c$ ps
+PID   USER     TIME  COMMAND
+    1 root      0:00 sh
+    6 root      0:00 ps
+```
+
+Much better.

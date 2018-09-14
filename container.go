@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"syscall"
 
@@ -44,13 +43,8 @@ func container() {
 	setPs1()
 	createContainerFilesystem("images", "alpine.tar.gz", "containers", containerId.String())
 
-	cmd := exec.Command("/bin/sh")
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		panic(fmt.Sprintf("Error running /bin/bash command: %s\n", err))
+	if err := syscall.Exec("/bin/sh", []string{"sh"}, os.Environ()); err != nil {
+		panic(fmt.Sprintf("Error exec'ing /bin/sh: %s\n", err))
 	}
 }
 
@@ -151,7 +145,9 @@ func main() {
 	// TODO: cmd.Env = []string{}
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Cloneflags: syscall.CLONE_NEWNS | syscall.CLONE_NEWUTS,
+		Cloneflags: syscall.CLONE_NEWNS |
+			syscall.CLONE_NEWUTS |
+			syscall.CLONE_NEWPID,
 	}
 
 	if err := cmd.Run(); err != nil {
