@@ -40,6 +40,8 @@ func container() {
 		panic(fmt.Sprintf("Error generating container uuid: %s\n", err))
 	}
 
+	setHostname(containerId.String())
+	setPs1()
 	createContainerFilesystem("images", "alpine.tar.gz", "containers", containerId.String())
 
 	cmd := exec.Command("/bin/sh")
@@ -49,6 +51,18 @@ func container() {
 
 	if err := cmd.Run(); err != nil {
 		panic(fmt.Sprintf("Error running /bin/bash command: %s\n", err))
+	}
+}
+
+func setHostname(containerId string) {
+	if err := syscall.Sethostname([]byte(containerId)); err != nil {
+		panic(fmt.Sprintf("Unable to set hostname %s\n", err))
+	}
+}
+
+func setPs1() {
+	if err := os.Setenv("PS1", "$USER@$HOSTNAME$ "); err != nil {
+		panic(fmt.Sprintf("Unable to set PS1%s\n", err))
 	}
 }
 
@@ -136,7 +150,7 @@ func main() {
 	cmd.Stderr = os.Stderr
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Cloneflags: syscall.CLONE_NEWNS,
+		Cloneflags: syscall.CLONE_NEWNS | syscall.CLONE_NEWUTS,
 	}
 
 	if err := cmd.Run(); err != nil {

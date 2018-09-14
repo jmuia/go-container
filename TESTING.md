@@ -134,3 +134,21 @@ I think I get it. `home_vagrant_go_src_github.com_jmuia_go-container` is just th
 
 We'll come back to making this better.
 
+
+## UTS namespace
+I've set the hostname to the container id (and updated the PS1, for fun). Since we're in a new UTS namespace, the host won't be affected.
+```
+vagrant@ubuntu-xenial:~/go/src/github.com/jmuia/go-container$ sudo ./go-container 
+Hello, I am main with pid 3727
+Hello, I am container with pid 3732
+root@76e03801-23ed-4c71-a1ba-c47f94811d0d$ hostname
+76e03801-23ed-4c71-a1ba-c47f94811d0d
+root@76e03801-23ed-4c71-a1ba-c47f94811d0d$ hostname container
+root@76e03801-23ed-4c71-a1ba-c47f94811d0d$ hostname
+container
+root@76e03801-23ed-4c71-a1ba-c47f94811d0d$ exit
+vagrant@ubuntu-xenial:~/go/src/github.com/jmuia/go-container$ hostname
+ubuntu-xenial
+```
+We can also compare the inode number in `/proc/self/ns/uts` for the container and the host.
+
