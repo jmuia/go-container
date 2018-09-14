@@ -27,8 +27,6 @@ func init() {
 }
 
 func container() {
-	fmt.Printf("Hello, I am container with pid %d\n", os.Getpid())
-
 	// Do not participate in shared subtrees by recursively setting mounts under / to private.
 	if err := syscall.Mount("none", "/", "", syscall.MS_REC|syscall.MS_PRIVATE, ""); err != nil {
 		panic(fmt.Sprintf("Error recursively settings mounts to private: %s\n", err))
@@ -76,6 +74,8 @@ func createContainerFilesystem(imageDir string, imageName string, containerDir s
 	if err := imageArchiver.Open(imagePath, containerRoot); err != nil {
 		panic(fmt.Sprintf("Error extracting image %s: %s\n", imageName, err))
 	}
+
+	fmt.Printf("Created container rootfs: %s\n", containerRoot)
 
 	// Change the container's root file system.
 	pivotRoot(containerRoot)
@@ -136,8 +136,6 @@ func pivotRoot(containerRoot string) {
 }
 
 func main() {
-	fmt.Printf("Hello, I am main with pid %d\n", os.Getpid())
-
 	cmd := reexec.Command("container")
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -153,4 +151,5 @@ func main() {
 	if err := cmd.Run(); err != nil {
 		panic(fmt.Sprintf("Error running reexec container command: %s\n", err))
 	}
+	fmt.Printf("%d exited ok\n", cmd.Process.Pid)
 }
