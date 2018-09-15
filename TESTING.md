@@ -212,3 +212,22 @@ PID   USER     TIME  COMMAND
 ```
 
 Much better.
+
+## USER namespace
+
+Now we can run ./go-container without root. We've set up UID and GID mapping so that inside the container we seem to be root.
+
+Before (ran from the parent namespace; 7564 is the container) we were actually root:
+```
+vagrant@ubuntu-xenial:~$ cat /proc/7564/uid_map
+         0          0 4294967295
+```
+
+After (ran from the parent namespace; 7666 is the container) we're still user 1000:
+```
+vagrant@ubuntu-xenial:~$ cat /proc/7666/uid_map
+         0       1000          1
+```
+
+I had some troubles getting this to work. I had to stop using `devtmpfs` and instead mount `tmpfs` at `/dev`. I also had some funky permissions stuff when I tried creating containers in the default `./containers` directory. Even though `vagrant` user owns the directory there was something odd going on with it being a `vboxfs` mount. I can just create them at `~/containers` for now.
+

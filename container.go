@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
 	"syscall"
 
@@ -41,6 +42,7 @@ func container() {
 	}
 
 	setHostname(containerId.String())
+	setEnv()
 	setPs1()
 	createContainerFilesystem(imageDir, imageName, containerDir, containerId.String())
 
@@ -53,6 +55,15 @@ func setHostname(containerId string) {
 	if err := syscall.Sethostname([]byte(containerId)); err != nil {
 		panic(fmt.Sprintf("Unable to set hostname %s\n", err))
 	}
+}
+
+// TODO: don't inherit parent env and set all basic env variables.
+func setEnv() {
+	currentUser, err := user.Current()
+	if err != nil {
+		panic(fmt.Sprintf("Unable to set environment variable USER %s\n", err))
+	}
+	os.Setenv("USER", currentUser.Username)
 }
 
 func setPs1() {
@@ -184,7 +195,24 @@ func main() {
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWNS |
 			syscall.CLONE_NEWUTS |
-			syscall.CLONE_NEWPID,
+			syscall.CLONE_NEWPID |
+			syscall.CLONE_NEWIPC |
+			syscall.CLONE_NEWNET |
+			syscall.CLONE_NEWUSER,
+		UidMappings: []syscall.SysProcIDMap{
+			{
+				ContainerID: 0,
+				HostID:      os.Geteuid(),
+				Size:        1,
+			},
+		},
+		GidMappings: []syscall.SysProcIDMap{
+			{
+				ContainerID: 0,
+				HostID:      os.Getegid(),
+				Size:        1,
+			},
+		},
 	}
 
 	if err := cmd.Run(); err != nil {
