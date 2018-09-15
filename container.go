@@ -162,9 +162,14 @@ func cliUsage() {
 }
 
 func main() {
+	var containersDir string
+	var imagesDir string
+	var imageName string
+
 	flag.Usage = cliUsage
-	containersDirPtr := flag.String("c", "containers", "directory to store containers")
-	imagesDirPtr := flag.String("i", "images", "directory to find container images")
+
+	flag.StringVar(&containersDir, "c", "containers", "directory to store containers")
+	flag.StringVar(&imagesDir, "i", "images", "directory to find container images")
 
 	flag.Parse()
 
@@ -173,9 +178,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	imageName := flag.Arg(0)
+	imageName = flag.Arg(0)
 
-	cmd := reexec.Command("container", *containersDirPtr, *imagesDirPtr, imageName)
+	cmd := reexec.Command("container", containersDir, imagesDir, imageName)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
