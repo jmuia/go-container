@@ -94,23 +94,27 @@ func createContainerFilesystem(imageDir string, imageName string, containerDir s
 
 	fmt.Printf("Created container rootfs: %s\n", containerRoot)
 
-	// Change the container's root file system.
-	pivotRoot(containerRoot)
-
 	// Mount special file systems per Open Containers spec.
 	// https://github.com/opencontainers/runtime-spec/blob/master/config-linux.md
-	mountSpecialFilesystems()
+	mountSpecialFilesystems(containerRoot)
+
+	// Change the container's root file system.
+	pivotRoot(containerRoot)
 }
 
-func mountSpecialFilesystems() {
-	mustMount("proc", "/proc", "proc", syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_NOEXEC, "")
-	mustMount("sysfs", "/sys", "sysfs", syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_NOEXEC, "")
+func mountSpecialFilesystems(containerRoot string) {
+	mustMount("proc", filepath.Join(containerRoot, "proc"), "proc", syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_NOEXEC, "")
+	mustMount("sysfs", filepath.Join(containerRoot, "sys"), "sysfs", syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_NOEXEC, "")
 
+	// TODO: figure out how to use devtmpfs instead.
 	// With devtmpfs, kernel will automatically create device nodes.
-	mustMount("devtmpfs", "/dev", "devtmpfs", syscall.MS_NOSUID, "mode=0755")
+	// mustMount("devtmpfs", filepath.Join(containerRoot, "dev"), "devtmpfs", syscall.MS_NOSUID, "mode=0755")
+	mustMount("tmpfs", filepath.Join(containerRoot, "dev"), "tmpfs", syscall.MS_NOSUID, "mode=0755")
 
-	mustMount("devpts", "/dev/pts", "devpts", syscall.MS_NOSUID|syscall.MS_NOEXEC, "")
-	mustMount("tmpfs", "/dev/shm", "tmpfs", syscall.MS_NOSUID|syscall.MS_NODEV, "")
+	mustMount("devpts", filepath.Join(containerRoot, "dev", "pts"), "devpts", syscall.MS_NOSUID|syscall.MS_NOEXEC, "newinstance")
+	mustMount("tmpfs", filepath.Join(containerRoot, "dev", "shm"), "tmpfs", syscall.MS_NOSUID|syscall.MS_NODEV, "")
+
+	// TODO: add devices in absence of devtmpfs.
 }
 
 func mustMount(source string, target string, fstype string, flags uintptr, data string) {

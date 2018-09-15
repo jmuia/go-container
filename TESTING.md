@@ -85,6 +85,8 @@ mount: no /proc/mounts
 ## Mount special file systems
 We can see interesting things in our special filesystems now and devtmpfs has created a bunch of devices for us.
 
+/Note from the future, using a separate user namespace (and not using sudo to run ./go-container) we've seemingly lost the ability to mount devtmpfs. This doesn't totally surprise me. Will have to add devices manually for now and mount tmpfs on /dev. This seems to indicate that devtmpfs does not set `FS_USERNS_MOUNT` flag./
+
 ```
 vagrant@ubuntu-xenial$ sudo ./go-container
 Hello, I am main with pid 22987
