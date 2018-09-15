@@ -231,3 +231,4 @@ vagrant@ubuntu-xenial:~$ cat /proc/7666/uid_map
 
 I had some troubles getting this to work. I had to stop using `devtmpfs` and instead mount `tmpfs` at `/dev`. I also had some funky permissions stuff when I tried creating containers in the default `./containers` directory. Even though `vagrant` user owns the directory there was something odd going on with it being a `vboxfs` mount. I can just create them at `~/containers` for now.
 
+/Note from the future: I've removed the user namespace and uid/gid mapping. It's considered an advanced feature of Docker and its interactions with other namespaces make things more complicated. We'll keep using `sudo` to run our container for now. We can `setuid` to downgrade our privileges in the container. We can maybe use the user namespace in tandem with `setuid`, entering the namespace after we've done all the setup with root access./

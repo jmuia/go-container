@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/user"
 	"path/filepath"
 	"syscall"
 
@@ -42,7 +41,6 @@ func container() {
 	}
 
 	setHostname(containerId.String())
-	setEnv()
 	setPs1()
 	createContainerFilesystem(imageDir, imageName, containerDir, containerId.String())
 
@@ -55,15 +53,6 @@ func setHostname(containerId string) {
 	if err := syscall.Sethostname([]byte(containerId)); err != nil {
 		panic(fmt.Sprintf("Unable to set hostname %s\n", err))
 	}
-}
-
-// TODO: don't inherit parent env and set all basic env variables.
-func setEnv() {
-	currentUser, err := user.Current()
-	if err != nil {
-		panic(fmt.Sprintf("Unable to set environment variable USER %s\n", err))
-	}
-	os.Setenv("USER", currentUser.Username)
 }
 
 func setPs1() {
@@ -117,15 +106,15 @@ func mountSpecialFilesystems(containerRoot string) {
 	mustMount("proc", filepath.Join(containerRoot, "proc"), "proc", syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_NOEXEC, "")
 	mustMount("sysfs", filepath.Join(containerRoot, "sys"), "sysfs", syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_NOEXEC, "")
 
-	// TODO: figure out how to use devtmpfs instead.
 	// With devtmpfs, kernel will automatically create device nodes.
-	// mustMount("devtmpfs", filepath.Join(containerRoot, "dev"), "devtmpfs", syscall.MS_NOSUID, "mode=0755")
-	mustMount("tmpfs", filepath.Join(containerRoot, "dev"), "tmpfs", syscall.MS_NOSUID, "mode=0755")
+	// It cannot be used in a user namespace, but our containers
+	// don't use that feature currently. If using a separate user
+	// namespace, we'll mount tmpfs on /dev and create devices manually.
+	mustMount("devtmpfs", filepath.Join(containerRoot, "dev"), "devtmpfs", syscall.MS_NOSUID, "mode=0755")
 
 	mustMount("devpts", filepath.Join(containerRoot, "dev", "pts"), "devpts", syscall.MS_NOSUID|syscall.MS_NOEXEC, "newinstance")
 	mustMount("tmpfs", filepath.Join(containerRoot, "dev", "shm"), "tmpfs", syscall.MS_NOSUID|syscall.MS_NODEV, "")
 
-	// TODO: add devices in absence of devtmpfs.
 }
 
 func mustMount(source string, target string, fstype string, flags uintptr, data string) {
@@ -197,22 +186,7 @@ func main() {
 			syscall.CLONE_NEWUTS |
 			syscall.CLONE_NEWPID |
 			syscall.CLONE_NEWIPC |
-			syscall.CLONE_NEWNET |
-			syscall.CLONE_NEWUSER,
-		UidMappings: []syscall.SysProcIDMap{
-			{
-				ContainerID: 0,
-				HostID:      os.Geteuid(),
-				Size:        1,
-			},
-		},
-		GidMappings: []syscall.SysProcIDMap{
-			{
-				ContainerID: 0,
-				HostID:      os.Getegid(),
-				Size:        1,
-			},
-		},
+			syscall.CLONE_NEWNET,
 	}
 
 	if err := cmd.Run(); err != nil {
