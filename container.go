@@ -161,15 +161,19 @@ func cliUsage() {
 	flag.PrintDefaults()
 }
 
+type runConfig struct {
+	containersDir string
+	imagesDir     string
+	imageName     string
+}
+
 func main() {
-	var containersDir string
-	var imagesDir string
-	var imageName string
+	var config runConfig
 
 	flag.Usage = cliUsage
 
-	flag.StringVar(&containersDir, "c", "containers", "directory to store containers")
-	flag.StringVar(&imagesDir, "i", "images", "directory to find container images")
+	flag.StringVar(&config.containersDir, "c", "containers", "directory to store containers")
+	flag.StringVar(&config.imagesDir, "i", "images", "directory to find container images")
 
 	flag.Parse()
 
@@ -178,9 +182,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	imageName = flag.Arg(0)
+	config.imageName = flag.Arg(0)
 
-	cmd := reexec.Command("container", containersDir, imagesDir, imageName)
+	cmd := reexec.Command("container", config.containersDir, config.imagesDir, config.imageName)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
