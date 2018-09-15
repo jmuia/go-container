@@ -8,6 +8,8 @@ Instead, I'm going to document some of the manual tests I did to see my code was
 
 In the future I might automate these.
 
+/Note from the future: this project has grown enough in complexity I would feel much more comfortable if I had test suite to run/
+
 ## Reexec
 Added some print statements showing the PID of the parent and child processes.
 

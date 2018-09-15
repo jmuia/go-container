@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -27,6 +28,8 @@ func init() {
 }
 
 func container() {
+	containerDir, imageDir, imageName := os.Args[1], os.Args[2], os.Args[3]
+
 	// Do not participate in shared subtrees by recursively setting mounts under / to private.
 	if err := syscall.Mount("none", "/", "", syscall.MS_REC|syscall.MS_PRIVATE, ""); err != nil {
 		panic(fmt.Sprintf("Error recursively settings mounts to private: %s\n", err))
@@ -39,7 +42,7 @@ func container() {
 
 	setHostname(containerId.String())
 	setPs1()
-	createContainerFilesystem("images", "alpine.tar.gz", "containers", containerId.String())
+	createContainerFilesystem(imageDir, imageName, containerDir, containerId.String())
 
 	if err := syscall.Exec("/bin/sh", []string{"sh"}, os.Environ()); err != nil {
 		panic(fmt.Sprintf("Error exec'ing /bin/sh: %s\n", err))
@@ -58,13 +61,27 @@ func setPs1() {
 	}
 }
 
-func createContainerFilesystem(imageDir string, imageName string, containerDir string, containerId string) {
-	imagePath := filepath.Join(imageDir, imageName)
-	containerRoot := filepath.Join(containerDir, containerId, "rootfs")
+func findImage(imageDir string, imageName string) string {
+	matches, err := filepath.Glob(filepath.Join(imageDir, imageName) + ".*")
+	if err != nil || len(matches) == 0 {
+		panic(fmt.Sprintf("Unable to locate image %s\n", imageName))
+	}
+	if len(matches) != 1 {
+		panic(fmt.Sprintf("Ambiguous image %s; multiple images match\n", imageName))
+	}
+
+	imagePath := matches[0]
 
 	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
 		panic(fmt.Sprintf("Unable to locate image %s\n", imageName))
 	}
+
+	return imagePath
+}
+
+func createContainerFilesystem(imageDir string, imageName string, containerDir string, containerId string) {
+	imagePath := findImage(imageDir, imageName)
+	containerRoot := filepath.Join(containerDir, containerId, "rootfs")
 
 	imageArchiver := archiver.MatchingFormat(imagePath)
 	if imageArchiver == nil {
@@ -135,8 +152,26 @@ func pivotRoot(containerRoot string) {
 
 }
 
+func cliUsage() {
+	fmt.Printf("Usage: %s [OPTIONS] <image name>\n", os.Args[0])
+	flag.PrintDefaults()
+}
+
 func main() {
-	cmd := reexec.Command("container")
+	flag.Usage = cliUsage
+	containersDirPtr := flag.String("c", "containers", "directory to store containers")
+	imagesDirPtr := flag.String("i", "images", "directory to find container images")
+
+	flag.Parse()
+
+	if flag.NArg() != 1 {
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	imageName := flag.Arg(0)
+
+	cmd := reexec.Command("container", *containersDirPtr, *imagesDirPtr, imageName)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
