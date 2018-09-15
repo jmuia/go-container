@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -156,34 +155,7 @@ func pivotRoot(containerRoot string) {
 
 }
 
-func cliUsage() {
-	fmt.Printf("Usage: %s [OPTIONS] <image name>\n", os.Args[0])
-	flag.PrintDefaults()
-}
-
-type runConfig struct {
-	containersDir string
-	imagesDir     string
-	imageName     string
-}
-
-func main() {
-	var config runConfig
-
-	flag.Usage = cliUsage
-
-	flag.StringVar(&config.containersDir, "c", "containers", "directory to store containers")
-	flag.StringVar(&config.imagesDir, "i", "images", "directory to find container images")
-
-	flag.Parse()
-
-	if flag.NArg() != 1 {
-		flag.Usage()
-		os.Exit(1)
-	}
-
-	config.imageName = flag.Arg(0)
-
+func run(config runConfig) {
 	cmd := reexec.Command("container", config.containersDir, config.imagesDir, config.imageName)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
