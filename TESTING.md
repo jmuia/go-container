@@ -213,7 +213,7 @@ PID   USER     TIME  COMMAND
 
 Much better.
 
-## USER namespace
+## User namespace
 
 Now we can run ./go-container without root. We've set up UID and GID mapping so that inside the container we seem to be root.
 
@@ -232,3 +232,39 @@ vagrant@ubuntu-xenial:~$ cat /proc/7666/uid_map
 I had some troubles getting this to work. I had to stop using `devtmpfs` and instead mount `tmpfs` at `/dev`. I also had some funky permissions stuff when I tried creating containers in the default `./containers` directory. Even though `vagrant` user owns the directory there was something odd going on with it being a `vboxfs` mount. I can just create them at `~/containers` for now.
 
 /Note from the future: I've removed the user namespace and uid/gid mapping. It's considered an advanced feature of Docker and its interactions with other namespaces make things more complicated. We'll keep using `sudo` to run our container for now. We can `setuid` to downgrade our privileges in the container. We can maybe use the user namespace in tandem with `setuid`, entering the namespace after we've done all the setup with root access./
+
+## Net namespace
+Adding a net namespace is easy if you don't set up any devices after!
+
+We can check the output of `ip a` before and after.
+
+Before we can see the hosts devices.
+
+```
+root@0885a90e-b2fb-4627-b5a6-679a1ac2ff01$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: enp0s3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+    link/ether 02:48:e1:e3:74:ed brd ff:ff:ff:ff:ff:ff
+    inet 10.0.2.15/24 brd 10.0.2.255 scope global enp0s3
+       valid_lft forever preferred_lft forever
+    inet6 fe80::48:e1ff:fee3:74ed/64 scope link 
+       valid_lft forever preferred_lft forever
+3: brg0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN 
+    link/ether 00:00:00:00:00:00 brd ff:ff:ff:ff:ff:ff
+    inet 10.10.10.1/24 scope global brg0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::cce5:86ff:fe25:70ac/64 scope link 
+       valid_lft forever preferred_lft forever
+```
+
+After using a new net namespace we just have `lo` and it's down:
+```
+root@12140b19-7415-4fa9-9aaf-ce91836f4499$ ip a
+1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN qlen 1
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+```
