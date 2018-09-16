@@ -369,3 +369,9 @@ This was `htop` right before we got killed:
   PID USER      PRI  NI  VIRT   RES   SHR S CPU% MEM%   TIME+  Command
 15887 root       20   0  340M  338M   272 R 44.2 34.2  0:02.59 grep n
 ```
+
+And `dmesg` has info for us too:
+```
+[50755.383321] Memory cgroup out of memory: Kill process 15887 (grep) score 971 or sacrifice child
+[50755.422342] Killed process 15887 (grep) total-vm:513244kB, anon-rss:511528kB, file-rss:272kB
+```
