@@ -9,41 +9,39 @@ import (
 	"github.com/mholt/archiver"
 )
 
-func createContainerFilesystem(imageDir string, imageName string, containerDir string, containerId string) {
-	imagePath := findImage(imageDir, imageName)
-	containerRoot := filepath.Join(containerDir, containerId, "rootfs")
-
+func createContainerFilesystem(c container) {
+	imagePath := findImage(c)
 	imageArchiver := archiver.MatchingFormat(imagePath)
 	if imageArchiver == nil {
-		panic(fmt.Sprintf("Unknown archive format for image %s\n", imageName))
+		panic(fmt.Sprintf("Unknown archive format for image %s\n", c.imageName))
 	}
 
-	if err := imageArchiver.Open(imagePath, containerRoot); err != nil {
-		panic(fmt.Sprintf("Error extracting image %s: %s\n", imageName, err))
+	if err := imageArchiver.Open(imagePath, c.root()); err != nil {
+		panic(fmt.Sprintf("Error extracting image %s: %s\n", c.imageName, err))
 	}
 
-	fmt.Printf("Created container rootfs: %s\n", containerRoot)
+	fmt.Printf("Created container rootfs: %s\n", c.root())
 
-	mountSpecialFilesystems(containerRoot)
-	makeDevices(containerRoot)
+	mountSpecialFilesystems(c)
+	makeDevices(c)
 
 	// Change the container's root file system.
-	pivotRoot(containerRoot)
+	pivotRoot(c)
 }
 
-func findImage(imageDir string, imageName string) string {
-	matches, err := filepath.Glob(filepath.Join(imageDir, imageName) + ".*")
+func findImage(c container) string {
+	matches, err := filepath.Glob(filepath.Join(c.imageDir, c.imageName) + ".*")
 	if err != nil || len(matches) == 0 {
-		panic(fmt.Sprintf("Unable to locate image %s\n", imageName))
+		panic(fmt.Sprintf("Unable to locate image %s\n", c.imageName))
 	}
 	if len(matches) != 1 {
-		panic(fmt.Sprintf("Ambiguous image %s; multiple images match\n", imageName))
+		panic(fmt.Sprintf("Ambiguous image %s; multiple images match\n", c.imageName))
 	}
 
 	imagePath := matches[0]
 
 	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
-		panic(fmt.Sprintf("Unable to locate image %s\n", imageName))
+		panic(fmt.Sprintf("Unable to locate image %s\n", c.imageName))
 	}
 
 	return imagePath
@@ -51,14 +49,12 @@ func findImage(imageDir string, imageName string) string {
 
 // Mount special file systems per Open Containers spec.
 // https://github.com/opencontainers/runtime-spec/blob/master/config-linux.md
-func mountSpecialFilesystems(containerRoot string) {
-	mustMount("proc", filepath.Join(containerRoot, "proc"), "proc", syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_NOEXEC, "")
-	mustMount("sysfs", filepath.Join(containerRoot, "sys"), "sysfs", syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_NOEXEC, "")
-
-	mustMount("tmpfs", filepath.Join(containerRoot, "dev"), "tmpfs", syscall.MS_NOSUID, "mode=0755")
-
-	mustMount("devpts", filepath.Join(containerRoot, "dev", "pts"), "devpts", syscall.MS_NOSUID|syscall.MS_NOEXEC, "")
-	mustMount("tmpfs", filepath.Join(containerRoot, "dev", "shm"), "tmpfs", syscall.MS_NOSUID|syscall.MS_NODEV, "")
+func mountSpecialFilesystems(c container) {
+	mustMount("proc", c.root("proc"), "proc", syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_NOEXEC, "")
+	mustMount("sysfs", c.root("sys"), "sysfs", syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_NOEXEC, "")
+	mustMount("tmpfs", c.root("dev"), "tmpfs", syscall.MS_NOSUID, "mode=0755")
+	mustMount("devpts", c.root("dev", "pts"), "devpts", syscall.MS_NOSUID|syscall.MS_NOEXEC, "")
+	mustMount("tmpfs", c.root("dev", "shm"), "tmpfs", syscall.MS_NOSUID|syscall.MS_NODEV, "")
 
 }
 
@@ -72,17 +68,16 @@ func mustMount(source string, target string, fstype string, flags uintptr, data 
 	}
 }
 
-func pivotRoot(containerRoot string) {
-	// bind mount containerRoot to itself to circumvent pivot_root requirement.
-	if err := syscall.Mount(containerRoot, containerRoot, "", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
+func pivotRoot(c container) {
+	// Bind mount containerRoot to itself to circumvent pivot_root requirement.
+	if err := syscall.Mount(c.root(), c.root(), "", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
 		panic(fmt.Sprintf("Error changing root file system (bind mount self): %s\n", err))
 	}
 
-	oldRoot := filepath.Join(containerRoot, "old_root")
-	if err := os.MkdirAll(oldRoot, 0700); err != nil {
+	if err := os.MkdirAll(c.root("old_root"), 0700); err != nil {
 		panic(fmt.Sprintf("Error changing root file system (mkdir old_root): %s\n", err))
 	}
-	if err := syscall.PivotRoot(containerRoot, oldRoot); err != nil {
+	if err := syscall.PivotRoot(c.root(), c.root("old_root")); err != nil {
 		panic(fmt.Sprintf("Error changing root file system (pivot_root): %s\n", err))
 	}
 	if err := os.Chdir("/"); err != nil {
@@ -98,4 +93,7 @@ func pivotRoot(containerRoot string) {
 	if err := os.RemoveAll("/old_root"); err != nil {
 		panic(fmt.Sprintf("Error changing root file system (rmdir old_root): %s\n", err))
 	}
+
+	// Container's root is now /.
+	c.containerRoot = "/"
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"syscall"
 
 	"golang.org/x/sys/unix"
@@ -13,18 +12,15 @@ import (
 // https://github.com/opencontainers/runtime-spec/blob/master/config-linux.md
 
 // Device documentation: https://www.kernel.org/doc/Documentation/admin-guide/devices.txt
-func makeDevices(containerRoot string) {
+func makeDevices(c container) {
 	// Standard file descriptors.
-	fdSource := filepath.Join(containerRoot, "proc", "self", "fd")
-	fdTarget := filepath.Join(containerRoot, "dev", "fd")
-	err := os.Symlink(fdSource, fdTarget)
+	err := os.Symlink(c.root("proc", "self", "fd"), c.root("dev", "fd"))
 	if err != nil {
 		panic(fmt.Sprintf("Error symlink fd: %s\n", err))
 	}
 
 	for i, dev := range []string{"stdin", "stdout", "stderr"} {
-		devicePath := filepath.Join(containerRoot, "dev", dev)
-		err := os.Symlink(fmt.Sprintf("/proc/self/fd/%d", i), devicePath)
+		err := os.Symlink(fmt.Sprintf("/proc/self/fd/%d", i), c.root("dev", dev))
 		if err != nil {
 			panic(fmt.Sprintf("Error symlink %s: %s\n", dev, err))
 		}
@@ -48,10 +44,9 @@ func makeDevices(containerRoot string) {
 	}
 
 	for _, dev := range devices {
-		devicePath := filepath.Join(containerRoot, "dev", dev.name)
 		device := int(unix.Mkdev(dev.major, dev.minor))
 
-		err := syscall.Mknod(devicePath, dev.kind|dev.perms, device)
+		err := syscall.Mknod(c.root("dev", dev.name), dev.kind|dev.perms, device)
 		if err != nil {
 			panic(fmt.Sprintf("Error mknod %s: %s\n", dev.name, err))
 		}
@@ -59,13 +54,12 @@ func makeDevices(containerRoot string) {
 	}
 
 	// Bind mount console.
-	consoleSource := filepath.Join(containerRoot, "dev", "pts", "1")
-	consoleTarget := filepath.Join(containerRoot, "dev", "console")
-	_, err = os.Create(consoleTarget)
+	_, err = os.Create(c.root("dev", "console"))
 	if err != nil {
 		panic(fmt.Sprintf("Error bind mount console: %s\n", err))
 	}
-	err = syscall.Mount(consoleSource, consoleTarget, "", syscall.MS_BIND, "")
+
+	err = syscall.Mount(c.root("dev", "pts", "1"), c.root("dev", "console"), "", syscall.MS_BIND, "")
 	if err != nil {
 		panic(fmt.Sprintf("Error bind mount console: %s\n", err))
 	}

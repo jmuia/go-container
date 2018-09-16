@@ -6,8 +6,8 @@ import (
 	"syscall"
 )
 
-func setEnv(containerId string) {
-	setHostname(containerId)
+func setEnv(c container) {
+	setHostname(c.id())
 	setPs1()
 }
 

@@ -8,25 +8,25 @@ import (
 	"strconv"
 )
 
-func createCgroups(containerId string, cpuShares int, memLimit string) {
+func createCgroups(c container) {
 	cpuGroup := map[string]string{
 		"cgroup.procs":      strconv.Itoa(os.Getpid()),
 		"notify_on_release": "1",
 	}
-	if cpuShares > 0 {
-		cpuGroup["cpu.shares"] = strconv.Itoa(cpuShares)
+	if c.cpuShares > 0 {
+		cpuGroup["cpu.shares"] = strconv.Itoa(c.cpuShares)
 	}
 
 	memGroup := map[string]string{
 		"cgroup.procs":      strconv.Itoa(os.Getpid()),
 		"notify_on_release": "1",
 	}
-	if memLimit != "" {
-		memGroup["memory.limit_in_bytes"] = memLimit
+	if c.memLimit != "" {
+		memGroup["memory.limit_in_bytes"] = c.memLimit
 	}
 
-	createCgroup("cpu", containerId, cpuGroup)
-	createCgroup("memory", containerId, memGroup)
+	createCgroup("cpu", c.id(), cpuGroup)
+	createCgroup("memory", c.id(), memGroup)
 }
 
 func createCgroup(kind string, containerId string, fileData map[string]string) {
