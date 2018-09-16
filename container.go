@@ -53,7 +53,7 @@ func (c container) image() string {
 }
 
 func setup() {
-	c := parseCliArgs()
+	c, _ := parseCliArgs()
 
 	containerId, err := uuid.NewV4()
 	if err != nil {
@@ -71,7 +71,7 @@ func setup() {
 	createCgroups(c)
 	createContainerFilesystem(c)
 
-	// TODO: wait fork network to avoid race.
+	// TODO: wait for network to avoid race.
 
 	if err := syscall.Exec(c.command[0], c.command, os.Environ()); err != nil {
 		panic(fmt.Sprintf("Error exec'ing /bin/sh: %s\n", err))
@@ -79,6 +79,8 @@ func setup() {
 }
 
 func main() {
+	_, config := parseCliArgs()
+
 	// Reexec changing only argv[0] to "setup".
 	os.Args[0] = "setup"
 	cmd := reexec.Command(os.Args...)
@@ -100,11 +102,7 @@ func main() {
 		panic(fmt.Sprintf("Error running reexec container command: %s\n", err))
 	}
 
-	config := networkConfig{
-		hostVethAddr:      "10.0.10.1/24",
-		containerVethAddr: "10.0.10.2/24",
-		containerPid:      cmd.Process.Pid,
-	}
+	config.containerPid = cmd.Process.Pid
 	setupNetwork(config)
 
 	if err := cmd.Wait(); err != nil {

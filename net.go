@@ -9,7 +9,7 @@ import (
 )
 
 type networkConfig struct {
-	hostVethAddr      string
+	bridgeAddr        string
 	containerVethAddr string
 	containerPid      int
 }
@@ -30,7 +30,7 @@ func (l link) addAddr(rawAddr string) {
 	if err != nil {
 		panic(fmt.Sprintf("Error parsing addr %s: %s\n", rawAddr, err))
 	}
-	err = netlink.AddrAdd(l.link, addr)
+	err = netlink.AddrReplace(l.link, addr)
 	if err != nil {
 		panic(fmt.Sprintf("Error adding addr to %v: %s\n", l.link, err))
 	}
@@ -105,11 +105,40 @@ func createVethPair(containerPid int) (hostVeth link, containerVeth link) {
 	return hostVeth, containerVeth
 }
 
-func setupNetwork(config networkConfig) {
-	hostVeth, containerVeth := createVethPair(config.containerPid)
+func createBridge() (bridge link) {
+	bridgeName := "goContainers0"
 
+	link, err := findLink(bridgeName)
+	if err != nil {
+		panic(fmt.Sprintf("Error creating bridge: %s\n", err))
+	}
+
+	if link != nil {
+		bridge.link = link
+		return bridge
+	}
+
+	linkAttrs := netlink.NewLinkAttrs()
+	linkAttrs.Name = bridgeName
+	bridge.link = &netlink.Bridge{LinkAttrs: linkAttrs}
+
+	err = netlink.LinkAdd(bridge.link)
+	if err != nil {
+		panic(fmt.Sprintf("Error creating bridge: %s\n", err))
+	}
+
+	return bridge
+}
+
+func setupNetwork(config networkConfig) {
+	bridge := createBridge()
+	bridge.up()
+	bridge.addAddr(config.bridgeAddr)
+
+	hostVeth, containerVeth := createVethPair(config.containerPid)
 	hostVeth.up()
-	hostVeth.addAddr(config.hostVethAddr)
+
+	netlink.LinkSetMaster(hostVeth.link, bridge.link.(*netlink.Bridge))
 
 	containerVeth.setNs(config.containerPid)
 
@@ -125,4 +154,19 @@ func setupNetwork(config networkConfig) {
 		containerVeth.up()
 	}
 	execer.exec(config.containerPid, work)
+}
+
+func findLink(name string) (netlink.Link, error) {
+	link, err := netlink.LinkByName(name)
+
+	if err != nil {
+		switch err.(type) {
+		case netlink.LinkNotFoundError:
+			return nil, nil
+		default:
+			return nil, err
+		}
+	}
+
+	return link, nil
 }

@@ -436,3 +436,23 @@ hello?
 hi!            
 we are networking!
 ```
+
+## Bridge networking
+I've supplemented the veth pairs with a bridge. All containers have their host veth added to the bridge, enabling container to container communication:
+
+Container A:
+```
+vagrant@ubuntu-xenial$ sudo ./go-container -bridge-addr 10.0.10.1/24 -container-addr 10.0.10.2/24 alpine /bin/sh 
+root@dd80de56-ddda-4754-ac70-a3454869a756$ nc -l -p 4000
+yo
+omg container2container networkz
+```
+
+Container B:
+```
+vagrant@ubuntu-xenial$ sudo ./go-container -bridge-addr 10.0.10.1/24 -container-addr 10.0.10.3/24 alpine /bin/sh 
+root@6bd70a5a-219b-4957-88ed-7c62d3d3c99f$ nc 10.0.10.2 4000
+yo
+omg container2container networkz
+```
+
