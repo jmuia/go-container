@@ -24,9 +24,8 @@ func createContainerFilesystem(imageDir string, imageName string, containerDir s
 
 	fmt.Printf("Created container rootfs: %s\n", containerRoot)
 
-	// Mount special file systems per Open Containers spec.
-	// https://github.com/opencontainers/runtime-spec/blob/master/config-linux.md
 	mountSpecialFilesystems(containerRoot)
+	makeDevices(containerRoot)
 
 	// Change the container's root file system.
 	pivotRoot(containerRoot)
@@ -50,17 +49,15 @@ func findImage(imageDir string, imageName string) string {
 	return imagePath
 }
 
+// Mount special file systems per Open Containers spec.
+// https://github.com/opencontainers/runtime-spec/blob/master/config-linux.md
 func mountSpecialFilesystems(containerRoot string) {
 	mustMount("proc", filepath.Join(containerRoot, "proc"), "proc", syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_NOEXEC, "")
 	mustMount("sysfs", filepath.Join(containerRoot, "sys"), "sysfs", syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_NOEXEC, "")
 
-	// With devtmpfs, kernel will automatically create device nodes.
-	// It cannot be used in a user namespace, but our containers
-	// don't use that feature currently. If using a separate user
-	// namespace, we'll mount tmpfs on /dev and create devices manually.
-	mustMount("devtmpfs", filepath.Join(containerRoot, "dev"), "devtmpfs", syscall.MS_NOSUID, "mode=0755")
+	mustMount("tmpfs", filepath.Join(containerRoot, "dev"), "tmpfs", syscall.MS_NOSUID, "mode=0755")
 
-	mustMount("devpts", filepath.Join(containerRoot, "dev", "pts"), "devpts", syscall.MS_NOSUID|syscall.MS_NOEXEC, "newinstance")
+	mustMount("devpts", filepath.Join(containerRoot, "dev", "pts"), "devpts", syscall.MS_NOSUID|syscall.MS_NOEXEC, "")
 	mustMount("tmpfs", filepath.Join(containerRoot, "dev", "shm"), "tmpfs", syscall.MS_NOSUID|syscall.MS_NODEV, "")
 
 }

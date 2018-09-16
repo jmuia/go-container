@@ -268,3 +268,49 @@ root@12140b19-7415-4fa9-9aaf-ce91836f4499$ ip a
 1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN qlen 1
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
 ```
+
+## Devices
+
+The auto-magic of `devtmpfs` is great, but it seems to me that it's leaking the host devices.
+
+```
+root@c2f51e5d-c642-4cf9-8901-101f0157dd2f$ ls /dev/
+autofs              mapper              tty0                tty36               tty63               ttyS4
+block               mcelog              tty1                tty37               tty7                ttyS5
+bsg                 mem                 tty10               tty38               tty8                ttyS6
+btrfs-control       memory_bandwidth    tty11               tty39               tty9                ttyS7
+char                mqueue              tty12               tty4                ttyS0               ttyS8
+console             net                 tty13               tty40               ttyS1               ttyS9
+core                network_latency     tty14               tty41               ttyS10              ttyprintk
+cpu_dma_latency     network_throughput  tty15               tty42               ttyS11              uinput
+disk                null                tty16               tty43               ttyS12              urandom
+ecryptfs            port                tty17               tty44               ttyS13              vboxguest
+fd                  ppp                 tty18               tty45               ttyS14              vboxuser
+full                psaux               tty19               tty46               ttyS15              vcs
+fuse                ptmx                tty2                tty47               ttyS16              vcs1
+hpet                pts                 tty20               tty48               ttyS17              vcs2
+hugepages           random              tty21               tty49               ttyS18              vcs3
+hwrng               rfkill              tty22               tty5                ttyS19              vcs4
+initctl             rtc                 tty23               tty50               ttyS2               vcs5
+input               rtc0                tty24               tty51               ttyS20              vcs6
+kmsg                sda                 tty25               tty52               ttyS21              vcsa
+lightnvm            sda1                tty26               tty53               ttyS22              vcsa1
+log                 sdb                 tty27               tty54               ttyS23              vcsa2
+loop-control        sg0                 tty28               tty55               ttyS24              vcsa3
+loop0               sg1                 tty29               tty56               ttyS25              vcsa4
+loop1               shm                 tty3                tty57               ttyS26              vcsa5
+loop2               snapshot            tty30               tty58               ttyS27              vcsa6
+loop3               snd                 tty31               tty59               ttyS28              vfio
+loop4               stderr              tty32               tty6                ttyS29              vga_arbiter
+loop5               stdin               tty33               tty60               ttyS3               vhost-net
+loop6               stdout              tty34               tty61               ttyS30              zero
+loop7               tty                 tty35               tty62               ttyS31
+```
+
+We're going to replace it with `tmpfs` and mount some devices ourselves.
+
+```
+root@21782b9e-1718-40fe-8f1e-6bf2e60be55d$ ls /dev
+console  full     ptmx     random   stderr   stdout   urandom
+fd       null     pts      shm      stdin    tty      zero
+```
