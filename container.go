@@ -67,7 +67,7 @@ func setup() {
 		panic(fmt.Sprintf("Error recursively settings mounts to private: %s\n", err))
 	}
 
-	setEnv(c)
+	setupEnvironment(c)
 	createCgroups(c)
 	createContainerFilesystem(c)
 
@@ -88,7 +88,6 @@ func main() {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	// TODO: cmd.Env = []string{}
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWNS |
