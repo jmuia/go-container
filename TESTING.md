@@ -314,3 +314,32 @@ root@21782b9e-1718-40fe-8f1e-6bf2e60be55d$ ls /dev
 console  full     ptmx     random   stderr   stdout   urandom
 fd       null     pts      shm      stdin    tty      zero
 ```
+
+## CPU cgroup
+We can check our container is in a cpu cgroup:
+```
+root@85c2367e-5547-4599-bbca-c4a80a5a1760$ cat /proc/self/cgroup 
+...
+3:cpu,cpuacct:/go_containers/85c2367e-5547-4599-bbca-c4a80a5a1760
+...
+```
+
+Also cool: I ran two containers, one with 200 cpu shares and the other with 400 cpu shares. Within each I ran CPU consuming processes. You can see that the two processes have about double CPU% than the bottom two.
+
+I had to spawn two processes per container, because if only one was running each container got 100% of a CPU core (which doesn't demonstrate the cgroups!).
+
+
+```
+  1  [|||||||||||||||||||||||||||||||||||||||||||||||100.0%]   Tasks: 45, 31 thr; 5 running
+  2  [|||||||||||||||||||||||||||||||||||||||||||||||100.0%]   Load average: 3.78 2.38 1.27 
+  Mem[||||||||||||||||||||||||||                 80.4M/992M]   Uptime: 13:00:23
+  Swp[                                                0K/0K]
+
+  PID USER      PRI  NI  VIRT   RES   SHR S CPU% MEM%   TIME+  Command
+13828 root       20   0  1516   252   208 R 79.5  0.0  1:27.60 yes
+13823 root       20   0  1516   252   204 R 79.5  0.0  2:01.63 yes
+13825 root       20   0  1516   252   204 R 39.4  0.0  1:13.62 yes
+13831 root       20   0  1516   252   204 R 38.6  0.0  0:41.26 yes
+```
+
+

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"syscall"
 
 	"github.com/docker/docker/pkg/reexec"
@@ -26,6 +27,10 @@ func init() {
 
 func container() {
 	containerDir, imageDir, imageName := os.Args[1], os.Args[2], os.Args[3]
+	cpuShares, err := strconv.Atoi(os.Args[4])
+	if err != nil {
+		panic(fmt.Sprintf("Error parsing cpu.shares: %s\n", err))
+	}
 
 	// Do not participate in shared subtrees by recursively setting mounts under / to private.
 	if err := syscall.Mount("none", "/", "", syscall.MS_REC|syscall.MS_PRIVATE, ""); err != nil {
@@ -38,6 +43,7 @@ func container() {
 	}
 
 	setEnv(containerId.String())
+	createCgroups(containerId.String(), cpuShares)
 	createContainerFilesystem(imageDir, imageName, containerDir, containerId.String())
 
 	if err := syscall.Exec("/bin/sh", []string{"sh"}, os.Environ()); err != nil {
@@ -46,7 +52,7 @@ func container() {
 }
 
 func run(config runConfig) {
-	cmd := reexec.Command("container", config.containersDir, config.imagesDir, config.imageName)
+	cmd := reexec.Command("container", config.containersDir, config.imagesDir, config.imageName, strconv.Itoa(config.cpuShares))
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

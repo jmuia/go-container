@@ -10,6 +10,7 @@ type runConfig struct {
 	containersDir string
 	imagesDir     string
 	imageName     string
+	cpuShares     int
 }
 
 func cliUsage() {
@@ -24,6 +25,8 @@ func main() {
 
 	flag.StringVar(&config.containersDir, "c", "containers", "directory to store containers")
 	flag.StringVar(&config.imagesDir, "i", "images", "directory to find container images")
+
+	flag.IntVar(&config.cpuShares, "cpu-shares", 0, "cpu shares (relative weight)")
 
 	flag.Parse()
 
