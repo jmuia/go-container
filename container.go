@@ -71,6 +71,8 @@ func setup() {
 	createCgroups(c)
 	createContainerFilesystem(c)
 
+	// TODO: wait fork network to avoid race.
+
 	if err := syscall.Exec(c.command[0], c.command, os.Environ()); err != nil {
 		panic(fmt.Sprintf("Error exec'ing /bin/sh: %s\n", err))
 	}
@@ -94,7 +96,18 @@ func main() {
 			syscall.CLONE_NEWNET,
 	}
 
-	if err := cmd.Run(); err != nil {
+	if err := cmd.Start(); err != nil {
+		panic(fmt.Sprintf("Error running reexec container command: %s\n", err))
+	}
+
+	config := networkConfig{
+		hostVethAddr:      "10.0.10.1/24",
+		containerVethAddr: "10.0.10.2/24",
+		containerPid:      cmd.Process.Pid,
+	}
+	setupNetwork(config)
+
+	if err := cmd.Wait(); err != nil {
 		panic(fmt.Sprintf("Error running reexec container command: %s\n", err))
 	}
 	fmt.Printf("%d exited ok\n", cmd.Process.Pid)

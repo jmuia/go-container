@@ -401,3 +401,38 @@ vagrant@ubuntu-xenial$ sudo du -sh containers/*
 16K	containers/fdf6fafd-e551-4b6d-8550-c3a93bd064c4
 ```
 
+## More networking -- veth devices
+
+We can see the devices in the container:
+```
+root@af6fef67-53ba-4b0c-b568-bfe8937b0a1c$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+30: veth22962c@if31: <BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN> mtu 1500 qdisc noqueue state UP qlen 1000
+    link/ether b6:21:87:d7:5c:27 brd ff:ff:ff:ff:ff:ff
+    inet 10.0.10.2/24 brd 10.0.10.255 scope global veth22962c
+       valid_lft forever preferred_lft forever
+    inet6 fe80::b421:87ff:fed7:5c27/64 scope link tentative 
+       valid_lft forever preferred_lft forever
+```
+
+And, now we can talk to our container over the local network.
+```
+# In the container
+root@d87b86a6-5acf-4986-8a65-075b320f6544$ nc -l -p 4000
+hello?
+hi!
+we are networking!
+```
+
+```
+# On the host
+vagrant@ubuntu-xenial$ nc 10.0.10.2 4000
+hello?
+hi!            
+we are networking!
+```
