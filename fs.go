@@ -10,17 +10,7 @@ import (
 )
 
 func createContainerFilesystem(c container) {
-	imagePath := findImage(c)
-	imageArchiver := archiver.MatchingFormat(imagePath)
-	if imageArchiver == nil {
-		panic(fmt.Sprintf("Unknown archive format for image %s\n", c.imageName))
-	}
-
-	if err := imageArchiver.Open(imagePath, c.root()); err != nil {
-		panic(fmt.Sprintf("Error extracting image %s: %s\n", c.imageName, err))
-	}
-
-	fmt.Printf("Created container rootfs: %s\n", c.root())
+	createOverlay(c)
 
 	mountSpecialFilesystems(c)
 	makeDevices(c)
@@ -29,22 +19,62 @@ func createContainerFilesystem(c container) {
 	pivotRoot(c)
 }
 
-func findImage(c container) string {
-	matches, err := filepath.Glob(filepath.Join(c.imagesDir, c.imageName) + ".*")
+func createOverlay(c container) {
+	exists, err := exists(c.image())
+	if err != nil {
+		panic(fmt.Sprintf("Unable to locate image %s\n", c.imageName))
+	}
+
+	if !exists {
+		extractImage(c)
+	}
+
+	if err := os.MkdirAll(c.root(), 0755); err != nil {
+		panic(fmt.Sprintf("Error creating overlay: %s\n", err))
+	}
+	if err := os.MkdirAll(c.container("workdir"), 0755); err != nil {
+		panic(fmt.Sprintf("Error creating overlay: %s\n", err))
+	}
+
+	overlayData := fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", c.image(), c.root(), c.container("workdir"))
+
+	if err := syscall.Mount("overlay", c.root(), "overlay", syscall.MS_NODEV, overlayData); err != nil {
+		panic(fmt.Sprintf("Error creating overlay: %s\n", err))
+	}
+}
+
+func exists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, err
+}
+
+func extractImage(c container) {
+	imageArchive := findImageArchive(c)
+	imageArchiver := archiver.MatchingFormat(imageArchive)
+	if imageArchiver == nil {
+		panic(fmt.Sprintf("Unknown archive format for image %s\n", c.imageName))
+	}
+
+	if err := imageArchiver.Open(imageArchive, c.image()); err != nil {
+		panic(fmt.Sprintf("Error extracting image %s: %s\n", c.imageName, err))
+	}
+}
+
+func findImageArchive(c container) string {
+	matches, err := filepath.Glob(c.image() + ".*")
 	if err != nil || len(matches) == 0 {
 		panic(fmt.Sprintf("Unable to locate image %s\n", c.imageName))
 	}
 	if len(matches) != 1 {
 		panic(fmt.Sprintf("Ambiguous image %s; multiple images match\n", c.imageName))
 	}
-
-	imagePath := matches[0]
-
-	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
-		panic(fmt.Sprintf("Unable to locate image %s\n", c.imageName))
-	}
-
-	return imagePath
+	return matches[0]
 }
 
 // Mount special file systems per Open Containers spec.
@@ -59,7 +89,7 @@ func mountSpecialFilesystems(c container) {
 }
 
 func mustMount(source string, target string, fstype string, flags uintptr, data string) {
-	if err := os.MkdirAll(target, os.ModeDir); err != nil {
+	if err := os.MkdirAll(target, 0755); err != nil {
 		panic(fmt.Sprintf("Error creating mount dir (mkdir %s) in container: %s\n", target, err))
 	}
 

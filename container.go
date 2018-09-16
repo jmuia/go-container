@@ -44,6 +44,14 @@ func (c container) root(subdirs ...string) string {
 	return filepath.Join(append([]string{c.containerRoot}, subdirs...)...)
 }
 
+func (c container) container(subdirs ...string) string {
+	return filepath.Join(append([]string{c.containersDir, c.containerId}, subdirs...)...)
+}
+
+func (c container) image() string {
+	return filepath.Join(c.imagesDir, c.imageName)
+}
+
 func setup() {
 	c := parseCliArgs()
 

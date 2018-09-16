@@ -385,3 +385,19 @@ Created container rootfs: containers/674a9ca8-137d-4bef-8e76-d4c2b17b1060/rootfs
 18419 exited ok
 ```
 
+## Overlay file system
+
+This part is cool. Overlay fs is union file system (and so copy-on-write).
+
+Instead of making a full copy of the 4.8M alpine image for each container, you can see the containers share one extracted image and only have to store differences and what I assume is bookkeeping data.
+```
+vagrant@ubuntu-xenial:/home/root$ sudo du -sh images/alpine
+4.8M	images/alpine
+```
+```
+vagrant@ubuntu-xenial$ sudo du -sh containers/*
+16K	containers/3be91532-63b6-42ac-8d51-ef5c69a11e41
+16K	containers/3bee0ef3-4a52-4598-ae0f-2de8054abdb5
+16K	containers/fdf6fafd-e551-4b6d-8550-c3a93bd064c4
+```
+
