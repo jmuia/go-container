@@ -328,7 +328,6 @@ Also cool: I ran two containers, one with 200 cpu shares and the other with 400 
 
 I had to spawn two processes per container, because if only one was running each container got 100% of a CPU core (which doesn't demonstrate the cgroups!).
 
-
 ```
   1  [|||||||||||||||||||||||||||||||||||||||||||||||100.0%]   Tasks: 45, 31 thr; 5 running
   2  [|||||||||||||||||||||||||||||||||||||||||||||||100.0%]   Load average: 3.78 2.38 1.27 
@@ -342,4 +341,31 @@ I had to spawn two processes per container, because if only one was running each
 13831 root       20   0  1516   252   204 R 38.6  0.0  0:41.26 yes
 ```
 
+## Memory cgroup
 
+We can check our container is in a memory cgroup:
+```
+root@836543f9-15f5-453b-a9fe-ae0a5179f008$ cat /proc/self/cgroup 
+...
+6:memory:/go_containers/836543f9-15f5-453b-a9fe-ae0a5179f008
+...
+```
+
+We can also see if we get killed by exceeding the memory limit set:
+```
+vagrant@ubuntu-xenial$ sudo ./go-container -mem 500M alpine
+Created container rootfs: containers/7703bed9-4b99-4050-a0a7-6602f0373a85/rootfs
+root@7703bed9-4b99-4050-a0a7-6602f0373a85$ yes | tr \\n x | grep n
+Killed
+```
+
+This was `htop` right before we got killed:
+```
+  1  [|||||||||||                                     18.6%]   Tasks: 38, 27 thr; 2 running
+  2  [||||||||||||||||||||||||||||||||||||||||||||||||91.8%]   Load average: 0.56 0.25 0.14 
+  Mem[|||||||||||||||||||||||||                   410M/992M]   Uptime: 14:05:49
+  Swp[                                                0K/0K]
+
+  PID USER      PRI  NI  VIRT   RES   SHR S CPU% MEM%   TIME+  Command
+15887 root       20   0  340M  338M   272 R 44.2 34.2  0:02.59 grep n
+```

@@ -7,10 +7,11 @@ import (
 )
 
 type runConfig struct {
-	containersDir string
-	imagesDir     string
-	imageName     string
-	cpuShares     int
+	containersDir   string
+	imagesDir       string
+	imageName       string
+	cpuShares       int
+	memLimitInBytes string
 }
 
 func cliUsage() {
@@ -25,8 +26,9 @@ func main() {
 
 	flag.StringVar(&config.containersDir, "c", "containers", "directory to store containers")
 	flag.StringVar(&config.imagesDir, "i", "images", "directory to find container images")
+	flag.IntVar(&config.cpuShares, "cpu", 0, "cpu shares (relative weight)")
 
-	flag.IntVar(&config.cpuShares, "cpu-shares", 0, "cpu shares (relative weight)")
+	flag.StringVar(&config.memLimitInBytes, "mem", "", "memory limit in bytes; suffixes can be used")
 
 	flag.Parse()
 

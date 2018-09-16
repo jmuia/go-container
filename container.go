@@ -27,6 +27,7 @@ func init() {
 
 func container() {
 	containerDir, imageDir, imageName := os.Args[1], os.Args[2], os.Args[3]
+	memLimitInBytes := os.Args[5]
 	cpuShares, err := strconv.Atoi(os.Args[4])
 	if err != nil {
 		panic(fmt.Sprintf("Error parsing cpu.shares: %s\n", err))
@@ -43,7 +44,7 @@ func container() {
 	}
 
 	setEnv(containerId.String())
-	createCgroups(containerId.String(), cpuShares)
+	createCgroups(containerId.String(), cpuShares, memLimitInBytes)
 	createContainerFilesystem(imageDir, imageName, containerDir, containerId.String())
 
 	if err := syscall.Exec("/bin/sh", []string{"sh"}, os.Environ()); err != nil {
@@ -52,7 +53,14 @@ func container() {
 }
 
 func run(config runConfig) {
-	cmd := reexec.Command("container", config.containersDir, config.imagesDir, config.imageName, strconv.Itoa(config.cpuShares))
+	cmd := reexec.Command(
+		"container",
+		config.containersDir,
+		config.imagesDir,
+		config.imageName,
+		strconv.Itoa(config.cpuShares),
+		config.memLimitInBytes)
+
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
