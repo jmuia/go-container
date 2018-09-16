@@ -67,9 +67,12 @@ func setup() {
 		panic(fmt.Sprintf("Error recursively settings mounts to private: %s\n", err))
 	}
 
-	setupEnvironment(c)
 	createCgroups(c)
-	createContainerFilesystem(c)
+	createRootFs(c)
+	mountSpecialFilesystems(c)
+	makeDevices(c)
+	pivotRoot(c)
+	setupEnvironment(c)
 
 	// TODO: wait for network to avoid race.
 

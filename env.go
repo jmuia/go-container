@@ -12,17 +12,21 @@ import (
 func setupEnvironment(c container) {
 	clearEnv()
 
-	u, err := user.Current()
-	if err != nil {
-		panic(fmt.Sprintf("Unable to set env vars %s\n", err))
+	if os.Getuid() == 0 {
+		mustSetEnv("USER", "root")
+		mustSetEnv("HOME", "/root")
+	} else {
+		u, err := user.Current()
+		if err != nil {
+			panic(fmt.Sprintf("Unable to set env vars %s\n", err))
+		}
+		mustSetEnv("USER", u.Username)
+		mustSetEnv("HOME", filepath.Join("/home", u.Username))
 	}
 
-	setHome(u)
 	setHostname(c.id())
-	mustSetEnv("USER", u.Username)
 	mustSetEnv("PS1", "$USER@$HOSTNAME$ ")
 	mustSetEnv("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
-
 }
 
 func clearEnv() {
@@ -34,14 +38,6 @@ func clearEnv() {
 func mustSetEnv(key string, value string) {
 	if err := os.Setenv(key, value); err != nil {
 		panic(fmt.Sprintf("Unable to set %s env var: %s\n", key, err))
-	}
-}
-
-func setHome(u *user.User) {
-	if os.Getuid() == 0 {
-		mustSetEnv("HOME", "/root")
-	} else {
-		mustSetEnv("HOME", filepath.Join("/home", u.Username))
 	}
 }
 
