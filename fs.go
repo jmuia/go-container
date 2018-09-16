@@ -30,7 +30,7 @@ func createContainerFilesystem(c container) {
 }
 
 func findImage(c container) string {
-	matches, err := filepath.Glob(filepath.Join(c.imageDir, c.imageName) + ".*")
+	matches, err := filepath.Glob(filepath.Join(c.imagesDir, c.imageName) + ".*")
 	if err != nil || len(matches) == 0 {
 		panic(fmt.Sprintf("Unable to locate image %s\n", c.imageName))
 	}

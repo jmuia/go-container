@@ -375,3 +375,13 @@ And `dmesg` has info for us too:
 [50755.383321] Memory cgroup out of memory: Kill process 15887 (grep) score 971 or sacrifice child
 [50755.422342] Killed process 15887 (grep) total-vm:513244kB, anon-rss:511528kB, file-rss:272kB
 ```
+
+## Entry command
+Now we can do something other than a shell.
+```
+vagrant@ubuntu-xenial:~/go/src/github.com/jmuia/go-container$ sudo ./go-container alpine /bin/echo 1
+Created container rootfs: containers/674a9ca8-137d-4bef-8e76-d4c2b17b1060/rootfs
+1
+18419 exited ok
+```
+

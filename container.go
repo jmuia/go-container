@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"syscall"
 
 	"github.com/docker/docker/pkg/reexec"
@@ -27,13 +26,14 @@ func init() {
 }
 
 type container struct {
-	containerDir  string
+	containersDir string
 	containerId   string
 	containerRoot string
 	imageName     string
-	imageDir      string
+	imagesDir     string
 	cpuShares     int
 	memLimit      string
+	command       []string
 }
 
 func (c container) id() string {
@@ -45,24 +45,14 @@ func (c container) root(subdirs ...string) string {
 }
 
 func setup() {
-	c := container{}
-	c.containerDir = os.Args[1]
-	c.imageDir = os.Args[2]
-	c.imageName = os.Args[3]
-	c.memLimit = os.Args[5]
-
-	cpuShares, err := strconv.Atoi(os.Args[4])
-	if err != nil {
-		panic(fmt.Sprintf("Error parsing cpu.shares: %s\n", err))
-	}
-	c.cpuShares = cpuShares
+	c := parseCliArgs()
 
 	containerId, err := uuid.NewV4()
 	if err != nil {
 		panic(fmt.Sprintf("Error generating container uuid: %s\n", err))
 	}
 	c.containerId = containerId.String()
-	c.containerRoot = filepath.Join(c.containerDir, c.containerId, "rootfs")
+	c.containerRoot = filepath.Join(c.containersDir, c.containerId, "rootfs")
 
 	// Do not participate in shared subtrees by recursively setting mounts under / to private.
 	if err := syscall.Mount("none", "/", "", syscall.MS_REC|syscall.MS_PRIVATE, ""); err != nil {
@@ -73,19 +63,15 @@ func setup() {
 	createCgroups(c)
 	createContainerFilesystem(c)
 
-	if err := syscall.Exec("/bin/sh", []string{"sh"}, os.Environ()); err != nil {
+	if err := syscall.Exec(c.command[0], c.command, os.Environ()); err != nil {
 		panic(fmt.Sprintf("Error exec'ing /bin/sh: %s\n", err))
 	}
 }
 
-func run(config runConfig) {
-	cmd := reexec.Command(
-		"setup",
-		config.containersDir,
-		config.imagesDir,
-		config.imageName,
-		strconv.Itoa(config.cpuShares),
-		config.memLimit)
+func main() {
+	// Reexec changing only argv[0] to "setup".
+	os.Args[0] = "setup"
+	cmd := reexec.Command(os.Args...)
 
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
