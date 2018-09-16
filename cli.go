@@ -7,7 +7,7 @@ import (
 )
 
 func cliUsage() {
-	fmt.Println("Usage: ./go-container [OPTIONS] <image name> <command>")
+	fmt.Println("Usage: sudo ./go-container [OPTIONS] <image name> <command>")
 	flag.PrintDefaults()
 }
 
