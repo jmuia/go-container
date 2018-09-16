@@ -14,7 +14,7 @@ import (
 // Device documentation: https://www.kernel.org/doc/Documentation/admin-guide/devices.txt
 func makeDevices(c container) {
 	// Standard file descriptors.
-	err := os.Symlink(c.root("proc", "self", "fd"), c.root("dev", "fd"))
+	err := os.Symlink("/proc/self/fd", c.root("dev", "fd"))
 	if err != nil {
 		panic(fmt.Sprintf("Error symlink fd: %s\n", err))
 	}
@@ -59,7 +59,7 @@ func makeDevices(c container) {
 		panic(fmt.Sprintf("Error bind mount console: %s\n", err))
 	}
 
-	err = syscall.Mount(c.root("dev", "pts", "1"), c.root("dev", "console"), "", syscall.MS_BIND, "")
+	err = syscall.Mount(c.root("dev", "pts", "0"), c.root("dev", "console"), "", syscall.MS_BIND, "")
 	if err != nil {
 		panic(fmt.Sprintf("Error bind mount console: %s\n", err))
 	}
