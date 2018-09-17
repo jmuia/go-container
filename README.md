@@ -1,8 +1,11 @@
 # go-container
 
-A basic container runtime and container management system; developed for learning purposes; written in Go.
+A basic container runtime and container management system; developed for learning purposes; written in Go*.
 
 The time spent coding, researching, and debugging errors is much more valuable than this code will ever be.
+
+<small>\* first time ever writing Go; be wary!</small>
+
 
 ## Features
 
@@ -72,7 +75,7 @@ I'm learning a ton of new things from this project: namespaces and cgroups; conc
 Instead, I've documented some of the manual testing I did in [`TESTING.md`](TESTING.md).
 
 ## Bugs?
-Open an issue or submit a PR. `go-container` is not bulletproof. During testing I found odd cases where I couldn't do certain operations on a VirtualBox shared directory mount.
+Open an issue or submit a PR. `go-container` is not bulletproof. For example, during testing I found odd cases where I couldn't do certain operations on a VirtualBox shared directory mount.
 
 As an aside, Go had some limitations with some syscalls and programming patterns due to aspects of its runtime design.
 
