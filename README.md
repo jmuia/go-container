@@ -53,6 +53,11 @@ Usage: sudo ./go-container [OPTIONS] <image name> <command>
     	memory limit in bytes; suffixes can be used
 ```
 
+Alpine Linux is included in the repository. A basic example looks like:
+```
+sudo ./go-container alpine /bin/sh
+```
+
 ## What's missing?
 * Containers must be run as root and privileges are not dropped when exec'ing the process.
 * User namespaces.

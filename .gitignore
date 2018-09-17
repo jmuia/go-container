@@ -3,4 +3,5 @@ Vagrantfile
 .vagrant/
 go-container
 containers
+images/alpine
 

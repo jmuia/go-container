@@ -53,8 +53,12 @@ func makeDevices(c container) {
 
 	}
 
-	// Bind mount console.
-	_, err = os.Create(c.root("dev", "console"))
+	// TODO: this is flaky due to the potential (lack of) existence of /dev/pts/0.
+	// bindMountConsole(c)
+}
+
+func bindMountConsole(c container) {
+	_, err := os.Create(c.root("dev", "console"))
 	if err != nil {
 		panic(fmt.Sprintf("Error bind mount console: %s\n", err))
 	}
