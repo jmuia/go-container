@@ -64,7 +64,7 @@ sudo ./go-container alpine /bin/sh
 * Cgroup namespaces (unavailable in Go).
 * Idiomatic Go. go-container is my first time ever using Go; it's not particularly nice code.
 * Tests!
-* More features... Docker does a lot
+* More features... Docker does a lot.
 
 ## Testing
 I'm learning a ton of new things from this project: namespaces and cgroups; concept of layering file systems; general Linux systems things; and Go! Adding a test suite is too much "new" (at least, for now).
