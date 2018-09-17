@@ -81,6 +81,7 @@ func (e netNsExecr) exec(pid int, work func()) {
 }
 
 func createVethPair(containerPid int) (hostVeth link, containerVeth link) {
+	// TODO: don't leak pid in veth name.
 	hostVethName := fmt.Sprintf("veth%dh", containerPid)
 	containerVethName := fmt.Sprintf("veth%dc", containerPid)
 
