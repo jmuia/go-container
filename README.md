@@ -9,7 +9,7 @@ The time spent coding, researching, and debugging errors is much more valuable t
 
 ## Features
 
-There are examples of most of these in [`TESTING.md`](TESTING.md).
+There are asciicast demos of most of these in [`DEMO.md`](DEMO.md).
 
 ### Namespaces
 Executes processes in separate mount, UTS, PID, IPC, and network namespaces.
