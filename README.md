@@ -6,7 +6,7 @@ The time spent coding, researching, and debugging errors is much more valuable t
 
 <small>\* first time ever writing Go; be wary!</small>
 
-## Asciicast Demos
+## Asciicast demos
 
 * [Basics](https://asciinema.org/a/drxibVCMaW78ZaOwM4rxPc029)
 * [Networking](https://asciinema.org/a/KtseNx1zxPQfa8cAs1r4vDhdp)
