@@ -17,31 +17,39 @@ The time spent coding, researching, and debugging errors is much more valuable t
 ## Features
 
 **Namespaces**
+
 Executes processes in separate mount, UTS, PID, IPC, and network namespaces.
 
 **Cgroups**
+
 Provides option to control resource usage with the CPU shares and memory limit cgroups.
 
 **`pivot_root` jail**
+
 "Jails" processes with a `pivot_root`, limiting their view of the file system.
 
 **Private mounts**
+
 Mount changes don't propagate between the host and container.
 
 **Special file systems and devices**
+
 Special file systems and devices are created per the [Open Containers spec for Linux](https://github.com/opencontainers/runtime-spec/blob/master/config-linux.md).
 
 `/proc`, `/dev`, `/sys` and more are mounted.
 Devices like `/dev/null`, `/dev/urandom`, etc. are also created.
 
 **Copy on write containers**
+
 Manages container images and creates copy-on-write copies using the Overlay file system.
 
 **Bridge network**
+
 Creates a veth pair for each container and adds them to the `goContainers0` bridge.
 The host system can communicate with the containers and the containers can communicate with each other (if added to the same subnet).
 
 **Environment**
+
 Sets up a clean environment with it's very own hostname and a fancy PS1.
 
 ## Usage
