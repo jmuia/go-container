@@ -64,6 +64,24 @@ Alpine Linux is included in the repository. A basic example looks like:
 sudo ./go-container alpine /bin/sh
 ```
 
+## Run/Install
+The easiest way to try it out is using Vagrant (ironically, I had trouble with Docker capabilities). If you want to do it yourself, use the steps in the `Vagrantfile` as a guide.
+
+```
+# this may take a while to apt-get update
+vagrant up --provision
+
+# ssh into the vm
+vagrant ssh
+
+# run as root, in root's GOPATH
+sudo su
+cd /root/go/src/github.com/jmuia/go-container/
+
+# run a container
+./go-container alpine /bin/sh
+```
+
 ## What's missing?
 * Containers must be run as root and privileges are not dropped when exec'ing the process.
 * User namespaces.

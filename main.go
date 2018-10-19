@@ -55,10 +55,7 @@ func (c container) image() string {
 func setup() {
 	c, _ := parseCliArgs()
 
-	containerId, err := uuid.NewV4()
-	if err != nil {
-		panic(fmt.Sprintf("Error generating container uuid: %s\n", err))
-	}
+	containerId := uuid.NewV4()
 	c.containerId = containerId.String()
 	c.containerRoot = filepath.Join(c.containersDir, c.containerId, "rootfs")
 
