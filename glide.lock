@@ -1,0 +1,44 @@
+hash: 4166a234d7687f88f5ed393779e7ac7c8478d0f2ca240626c119252beed77001
+updated: 2018-10-18T20:44:44.32655-04:00
+imports:
+- name: github.com/docker/docker
+  version: 90d35abf7b3535c1c319c872900fbd76374e521c
+  subpackages:
+  - pkg/reexec
+- name: github.com/dsnet/compress
+  version: cc9eb1d7ad760af14e8f918698f745e80377af4f
+  subpackages:
+  - bzip2
+  - bzip2/internal/sais
+  - internal
+  - internal/errors
+  - internal/prefix
+- name: github.com/golang/snappy
+  version: 2e65f85255dbc3072edf28d6b5b8efc472979f5a
+- name: github.com/mholt/archiver
+  version: de0d89e255e17c8d75a40122055763e743ab0593
+- name: github.com/nwaples/rardecode
+  version: e06696f847aeda6f39a8f0b7cdff193b7690aef6
+- name: github.com/pierrec/lz4
+  version: 635575b42742856941dbc767b44905bb9ba083f6
+  subpackages:
+  - internal/xxh32
+- name: github.com/satori/go.uuid
+  version: f58768cc1a7a7e77a3bd49e98cdd21419399b6a3
+- name: github.com/ulikunitz/xz
+  version: 636d36a76670e6c700f22fd5f4588679ff2896c4
+  subpackages:
+  - internal/hash
+  - internal/xlog
+  - lzma
+- name: github.com/vishvananda/netlink
+  version: a2ad57a690f3caf3015351d2d6e1c0b95c349752
+  subpackages:
+  - nl
+- name: github.com/vishvananda/netns
+  version: 13995c7128ccc8e51e9a6bd2b551020a27180abd
+- name: golang.org/x/sys
+  version: fa43e7bc11baaae89f3f902b2b4d832b68234844
+  subpackages:
+  - unix
+testImports: []

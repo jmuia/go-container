@@ -1,0 +1,16 @@
+package: github.com/jmuia/go-container
+import:
+- package: github.com/docker/docker
+  version: ~17.5.0-ce-rc3
+  subpackages:
+  - pkg/reexec
+- package: github.com/mholt/archiver
+  version: v2.1
+- package: github.com/satori/go.uuid
+  version: v1.2.0
+- package: github.com/vishvananda/netlink
+  version: v1.0.0
+- package: github.com/vishvananda/netns
+- package: golang.org/x/sys
+  subpackages:
+  - unix
